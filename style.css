@@ -114,6 +114,13 @@ main { max-width: 900px; margin: 0 auto; padding: 0 16px; }
 .status.ok { color: #3c8a4a; }
 .status.feil { color: #c0392b; }
 
+.hint { margin: 0; font-size: .9rem; color: var(--dempet); }
+.gjesteliste { list-style: none; padding: 0; margin: 24px 0 0; display: flex; flex-wrap: wrap; gap: 10px; }
+.gjesteliste li {
+  background: var(--flate); border: 1px solid var(--gull); border-radius: 999px;
+  padding: 8px 18px; font-weight: 500;
+}
+.gjesteliste li::before { content: "✦ "; color: var(--gull); }
 .hilsener { list-style: none; padding: 0; margin: 24px 0 0; display: grid; gap: 12px; }
 .hilsener li { background: var(--flate); border: 1px solid var(--kant); border-left: 4px solid var(--gull); border-radius: var(--radius); padding: 16px 20px; }
 .hilsener p { margin: 0 0 6px; white-space: pre-wrap; }

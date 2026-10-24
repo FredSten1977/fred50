@@ -43,3 +43,16 @@ create or replace view public.rsvp_oversikt with (security_invoker = on) as
     coalesce(sum(antall) filter (where kommer), 0) as personer_totalt
   from public.rsvp;
 revoke all on public.rsvp_oversikt from anon, authenticated;
+
+-- Offentlig gjesteliste: gir bare ut navnene på dem som har takket ja.
+create or replace function public.gjesteliste()
+returns table (navn text)
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select r.navn from public.rsvp r where r.kommer order by r.created_at;
+$$;
+revoke all on function public.gjesteliste() from public;
+grant execute on function public.gjesteliste() to anon, authenticated;

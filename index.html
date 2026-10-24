@@ -26,7 +26,7 @@
   </header>
 
   <nav class="meny">
-    <a href="#info">Info</a><a href="#bilder">Bilder</a><a href="#svar">Svar</a><a href="#gjestebok">Gjestebok</a>
+    <a href="#info">Info</a><a href="#bilder">Bilder</a><a href="#svar">Svar</a><a href="#gjester">Gjester</a><a href="#gjestebok">Gjestebok</a>
   </nav>
 
   <main>
@@ -62,9 +62,17 @@
         <label>Antall personer (inkludert deg)<input name="antall" type="number" min="1" max="10" value="1"></label>
         <label>Allergier eller matbehov<input name="allergier" maxlength="300"></label>
         <label>Melding til Fredrik (valgfritt)<textarea name="melding" rows="3" maxlength="1000"></textarea></label>
+        <p class="hint">Takker du ja, vises navnet ditt under «Gjester».</p>
         <button class="knapp" type="submit">Send svar</button>
         <p class="status" id="rsvp-status" role="status"></p>
       </form>
+    </section>
+
+    <section id="gjester" class="seksjon">
+      <h2>Gjester</h2>
+      <p class="ingress">Disse fantastiske menneskene møter du denne kvelden!</p>
+      <ul class="gjesteliste" id="gjesteliste"></ul>
+      <p class="hint" id="gjester-tom">Ingen har svart ennå. Bli den første!</p>
     </section>
 
     <section id="gjestebok" class="seksjon">

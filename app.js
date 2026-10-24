@@ -113,6 +113,28 @@
     if (error) throw error;
   }
 
+  async function hentGjester() {
+    if (!db) return lokal.hent("fred50_rsvp").filter((r) => r.kommer).reverse();
+    const { data, error } = await db.rpc("gjesteliste");
+    if (error) throw error;
+    return data;
+  }
+
+  async function visGjester() {
+    try {
+      const gjester = await hentGjester();
+      $("gjesteliste").replaceChildren(...gjester.map((g) => {
+        const li = document.createElement("li");
+        li.textContent = g.navn;
+        return li;
+      }));
+      $("gjester-tom").hidden = gjester.length > 0;
+    } catch (err) {
+      console.error(err);
+    }
+  }
+  visGjester();
+
   async function hentHilsener() {
     if (!db) return lokal.hent("fred50_gjestebok");
     const { data, error } = await db.from("gjestebok").select("navn, tekst, created_at").order("created_at", { ascending: false }).limit(200);
@@ -156,7 +178,7 @@
     antall: fd.get("kommer") === "ja" ? Math.max(1, parseInt(fd.get("antall"), 10) || 1) : 0,
     allergier: tekst(fd, "allergier") || null,
     melding: tekst(fd, "melding") || null,
-  }), "rsvp", (r) => r.kommer ? `Takk, ${r.navn}! Gleder meg til å se deg. 🎉` : `Takk for beskjed, ${r.navn}. Du blir savnet!`);
+  }), "rsvp", (r) => r.kommer ? `Takk, ${r.navn}! Gleder meg til å se deg. 🎉` : `Takk for beskjed, ${r.navn}. Du blir savnet!`, visGjester);
 
   koblesTil("gjestebok-skjema", "gjestebok-status", (fd) => ({
     navn: tekst(fd, "navn"),
