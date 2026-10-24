@@ -4,22 +4,23 @@ window.FEST = {
   alder: 50,
 
   // Dato og klokkeslett for festen (format: ÅÅÅÅ-MM-DDTTT:MM, norsk tid)
-  dato: "2027-03-13T19:00",
-  datoTekst: "Lørdag 13. mars 2027",   // PLASSHOLDER
-  tidTekst: "Kl. 19.00 til sent",       // PLASSHOLDER
-  sted: "Stedet kommer",                // PLASSHOLDER
-  adresse: "Adresse kommer",            // PLASSHOLDER
-  kartLenke: "",                        // f.eks. lenke fra Google Maps
-  antrekk: "Pent, men komfortabelt",    // PLASSHOLDER
-  svarFrist: "1. februar 2027",         // PLASSHOLDER
+  dato: "2027-04-24T16:00",
+  datoTekst: "Lørdag 24. april 2027",
+  tidTekst: "Fra kl. 16.00",
+  sted: "Liwligs lokaler i Vika",
+  adresse: "Vika, Oslo",
+  kartLenke: "https://www.google.com/maps/search/?api=1&query=Liwlig+Vika+Oslo",
+  antrekk: "CAYA – kom som du er",
+  svarFrist: "15. januar 2027",
 
   velkomst:
     "Et halvt århundre skal feires! Bli med på en kveld med god mat, " +
     "gode venner, musikk og minner. Det blir ikke det samme uten deg.",
 
+  // PLASSHOLDER: tidene i programmet er gjetninger
   program: [
-    { tid: "19.00", tekst: "Velkomstdrink" },
-    { tid: "20.00", tekst: "Middag og taler" },
+    { tid: "16.00", tekst: "Velkomstdrink" },
+    { tid: "18.00", tekst: "Middag og taler" },
     { tid: "22.00", tekst: "Musikk og dans" },
   ],
 
