@@ -24,8 +24,11 @@ window.FEST = {
     { tid: "22.00", tekst: "Musikk og dans" },
   ],
 
-  // Portrett øverst på forsiden. Tom tekst skjuler det.
-  portrett: "bilder/portrett.jpg",
+  // Panoramabilde øverst på forsiden. Tom tekst skjuler det.
+  panorama: "bilder/skate.jpg",
+
+  // Rundt portrett på forsiden. Tom tekst skjuler det.
+  portrett: "",
 
   // Bilder: legg filer i mappen bilder/ og skriv filnavnene her.
   // Tom liste viser plassholdere.
