@@ -45,6 +45,6 @@ window.FEST = {
 
   // Supabase (database for svar og gjestebok). Tomme verdier = demomodus
   // der innlegg bare lagres i nettleseren din.
-  supabaseUrl: "",
-  supabaseKey: "",
+  supabaseUrl: "https://nrgsmolzahazhrmeutfi.supabase.co",
+  supabaseKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5yZ3Ntb2x6YWhhemhybWV1dGZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI4MzAyNTcsImV4cCI6MjEwODQwNjI1N30.rtPmspS1jaDw-EPl5UXFcLsa0Rn_Q0sMhyBwXAOU8gs",
 };
