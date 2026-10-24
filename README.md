@@ -41,20 +41,9 @@ opptelling, kjør `select * from rsvp_oversikt;` i SQL Editor.
 
 ## 2. Publisere siden
 
-### Netlify (anbefalt)
-
-1. Logg inn på [netlify.com](https://netlify.com) med GitHub-kontoen din.
-2. **Add new site → Import an existing project → GitHub** og velg `fred50`.
-3. La byggefeltene stå tomme (filen `netlify.toml` tar seg av resten) og
-   trykk **Deploy**.
-4. Under **Site configuration → Change site name** kan du velge f.eks.
-   `fredrik50.netlify.app`. Hver gang endringer kommer inn i GitHub,
-   oppdateres siden automatisk.
-
-### Alternativ: GitHub Pages
-
-Repo → **Settings → Pages** → *Deploy from a branch*, velg hovedgrenen og
-mappen `/ (root)`. Siden havner på `https://fredsten1977.github.io/fred50/`.
+Siden ligger ute på **https://fredsten1977.github.io/fred50/** via GitHub
+Pages. Pages publiserer fra grenen `gh-pages`, så endringer må pushes dit
+for å bli synlige (det tar ca. ett minutt).
 
 ## Teste lokalt
 
