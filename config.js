@@ -24,8 +24,9 @@ window.FEST = {
     { tid: "22.00", tekst: "Musikk og dans" },
   ],
 
-  // Panoramabilde øverst på forsiden. Tom tekst skjuler det.
-  panorama: "bilder/skate.jpg",
+  // Bakgrunnsbilde bak teksten øverst på forsiden. Tom tekst gir mørk bakgrunn.
+  bakgrunn: "bilder/bakgrunn.jpg",
+  fotoKreditt: "Foto: Emo Jørgensen",
 
   // Rundt portrett på forsiden. Tom tekst skjuler det.
   portrett: "",

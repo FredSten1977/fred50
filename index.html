@@ -10,20 +10,22 @@
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎉</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=4">
+  <link rel="stylesheet" href="style.css?v=5">
 </head>
 <body>
   <button id="musikk-knapp" class="musikk" hidden aria-pressed="false" aria-label="Spill musikk">♪ Spill musikk</button>
   <audio id="musikk" loop preload="none"></audio>
 
-  <header class="hero">
-    <div class="panorama" id="panorama" hidden></div>
-    <img class="portrett" id="portrett" alt="Fredrik" hidden>
-    <p class="kicker">Du er invitert</p>
-    <h1><span id="navn">Fredrik</span> <span class="tall" id="alder">50</span></h1>
-    <p class="hero-dato" id="hero-dato"></p>
-    <div class="nedtelling" id="nedtelling" aria-live="polite"></div>
-    <a class="knapp" href="#svar">Svar på invitasjonen</a>
+  <header class="hero" id="hero">
+    <div class="hero-innhold">
+      <img class="portrett" id="portrett" alt="Fredrik" hidden>
+      <p class="kicker">Du er invitert</p>
+      <h1><span id="navn">Fredrik</span> <span class="tall" id="alder">50</span></h1>
+      <p class="hero-dato" id="hero-dato"></p>
+      <div class="nedtelling" id="nedtelling" aria-live="polite"></div>
+      <a class="knapp" href="#svar">Svar på invitasjonen</a>
+    </div>
+    <p class="kreditt" id="kreditt" hidden></p>
   </header>
 
   <nav class="meny">
@@ -91,8 +93,8 @@
 
   <footer><p>Gleder meg til å se deg! 🎉</p><p class="demo" id="demo-varsel" hidden>Demomodus: databasen er ikke koblet til ennå, så innlegg lagres bare i denne nettleseren.</p></footer>
 
-  <script src="config.js?v=4"></script>
+  <script src="config.js?v=5"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-  <script src="app.js?v=4"></script>
+  <script src="app.js?v=5"></script>
 </body>
 </html>

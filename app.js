@@ -15,7 +15,11 @@
   sett("info-antrekk", F.antrekk);
   sett("svarfrist", F.svarFrist);
   document.title = F.navn + " " + F.alder + " år";
-  if (F.panorama) { $("panorama").style.backgroundImage = "url('" + F.panorama + "')"; $("panorama").hidden = false; }
+  if (F.bakgrunn) {
+    $("hero").style.setProperty("--bakgrunn", "url('" + F.bakgrunn + "')");
+    $("hero").classList.add("med-bilde");
+  }
+  if (F.fotoKreditt) { sett("kreditt", F.fotoKreditt); $("kreditt").hidden = false; }
   if (F.portrett) { $("portrett").src = F.portrett; $("portrett").hidden = false; }
   if (F.kartLenke) { $("info-kart").href = F.kartLenke; $("info-kart").hidden = false; }
 
