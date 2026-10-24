@@ -23,10 +23,17 @@ window.FEST = {
     { tid: "22.00", tekst: "Musikk og dans" },
   ],
 
+  // Portrett øverst på forsiden. Tom tekst skjuler det.
+  portrett: "bilder/portrett.jpg",
+
   // Bilder: legg filer i mappen bilder/ og skriv filnavnene her.
   // Tom liste viser plassholdere.
   bilder: [
-    // { fil: "bilder/1977.jpg", tekst: "Der det hele startet, 1977" },
+    { fil: "bilder/ungdom.jpg", tekst: "Ungdomstiden" },
+    { fil: "bilder/brygga.jpg", tekst: "Sommer på brygga" },
+    { fil: "bilder/i-squared.jpg", tekst: "På scenen med I-Squared" },
+    { fil: "bilder/venner.jpg", tekst: "Med gode venner" },
+    { fil: "bilder/portrett.jpg", tekst: "Fredrik i dag" },
   ],
 
   // Video: lim inn en YouTube- eller Vimeo-lenke. Tom tekst skjuler videoen.

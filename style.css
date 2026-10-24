@@ -43,6 +43,11 @@ a { color: var(--gull-mork); }
     var(--hero-bg);
   color: var(--hero-tekst);
 }
+.portrett {
+  width: 160px; height: 160px; border-radius: 50%; object-fit: cover;
+  border: 3px solid #d9a94a; margin-bottom: 24px;
+  box-shadow: 0 0 0 8px rgba(217,169,74,.15);
+}
 .kicker { letter-spacing: .3em; text-transform: uppercase; font-size: .8rem; color: #d9a94a; margin: 0; }
 .hero h1 { font-size: clamp(3rem, 12vw, 7rem); margin: .2em 0; font-weight: 500; }
 .hero .tall { color: #d9a94a; font-weight: 700; }
@@ -86,7 +91,7 @@ main { max-width: 900px; margin: 0 auto; padding: 0 16px; }
 
 .galleri { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
 .galleri figure { margin: 0; background: var(--flate); border: 1px solid var(--kant); border-radius: var(--radius); overflow: hidden; }
-.galleri img, .galleri .plass { width: 100%; aspect-ratio: 4/3; object-fit: cover; display: block; }
+.galleri img, .galleri .plass { width: 100%; aspect-ratio: 3/4; object-fit: cover; object-position: center 25%; display: block; }
 .galleri .plass {
   display: flex; align-items: center; justify-content: center; font-size: 2rem; color: var(--gull);
   background: repeating-linear-gradient(45deg, var(--kant) 0 12px, transparent 12px 24px);

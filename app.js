@@ -15,6 +15,7 @@
   sett("info-antrekk", F.antrekk);
   sett("svarfrist", F.svarFrist);
   document.title = F.navn + " " + F.alder + " år";
+  if (F.portrett) { $("portrett").src = F.portrett; $("portrett").hidden = false; }
   if (F.kartLenke) { $("info-kart").href = F.kartLenke; $("info-kart").hidden = false; }
 
   const program = $("program");
