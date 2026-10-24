@@ -32,13 +32,31 @@ window.FEST = {
   portrett: "",
 
   // Bilder: legg filer i mappen bilder/ og skriv filnavnene her.
+  // Vil du ha bildetekst, skriv { fil: "bilder/x.jpg", tekst: "..." }.
   // Tom liste viser plassholdere.
   bilder: [
-    { fil: "bilder/ungdom.jpg", tekst: "Ungdomstiden" },
-    { fil: "bilder/brygga.jpg", tekst: "Sommer på brygga" },
-    { fil: "bilder/i-squared.jpg", tekst: "På scenen med I-Squared" },
-    { fil: "bilder/venner.jpg", tekst: "Med gode venner" },
-    { fil: "bilder/portrett.jpg", tekst: "Fredrik i dag" },
+    "bilder/ungdom.jpg",
+    "bilder/skate.jpg",
+    "bilder/skate3.jpg",
+    "bilder/skate2.jpg",
+    "bilder/skate5.jpg",
+    "bilder/pinto.jpg",
+    "bilder/mald.jpg",
+    "bilder/six2.jpg",
+    "bilder/six.jpg",
+    "bilder/brygga.jpg",
+    "bilder/la2.jpg",
+    "bilder/la.jpg",
+    "bilder/nyc.jpg",
+    "bilder/nyc2.jpg",
+    "bilder/nyc3.jpg",
+    "bilder/sykkel.jpg",
+    "bilder/iceman.jpg",
+    "bilder/ghost.jpg",
+    "bilder/putin.jpg",
+    "bilder/venner.jpg",
+    "bilder/i-squared.jpg",
+    "bilder/portrett.jpg",
   ],
 
   // Video: lim inn en YouTube- eller Vimeo-lenke. Tom tekst skjuler videoen.

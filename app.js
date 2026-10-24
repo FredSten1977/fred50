@@ -52,7 +52,7 @@
   // --- Bilder ---
   const galleri = $("galleri");
   const bilder = F.bilder.length ? F.bilder : Array.from({ length: 6 }, (_, i) => ({ tekst: "Bilde " + (i + 1) + " kommer" }));
-  bilder.forEach((b) => {
+  bilder.map((b) => typeof b === "string" ? { fil: b } : b).forEach((b) => {
     const fig = document.createElement("figure");
     if (b.fil) {
       const img = document.createElement("img");
