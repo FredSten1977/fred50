@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="no">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fredrik 50 år</title>
+  <meta name="description" content="Invitasjon til Fredriks 50-årsdag">
+  <meta property="og:title" content="Fredrik 50 år – du er invitert!">
+  <meta property="og:description" content="Svar på invitasjonen og skriv en hilsen i gjesteboka.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎉</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <button id="musikk-knapp" class="musikk" hidden aria-pressed="false" aria-label="Spill musikk">♪ Spill musikk</button>
+  <audio id="musikk" loop preload="none"></audio>
+
+  <header class="hero">
+    <p class="kicker">Du er invitert</p>
+    <h1><span id="navn">Fredrik</span> <span class="tall" id="alder">50</span></h1>
+    <p class="hero-dato" id="hero-dato"></p>
+    <div class="nedtelling" id="nedtelling" aria-live="polite"></div>
+    <a class="knapp" href="#svar">Svar på invitasjonen</a>
+  </header>
+
+  <nav class="meny">
+    <a href="#info">Info</a><a href="#bilder">Bilder</a><a href="#svar">Svar</a><a href="#gjestebok">Gjestebok</a>
+  </nav>
+
+  <main>
+    <section id="info" class="seksjon">
+      <h2>Velkommen</h2>
+      <p class="ingress" id="velkomst"></p>
+      <div class="kort-rad">
+        <div class="kort"><h3>Når</h3><p id="info-dato"></p><p id="info-tid"></p></div>
+        <div class="kort"><h3>Hvor</h3><p id="info-sted"></p><p id="info-adresse"></p><p><a id="info-kart" hidden target="_blank" rel="noopener">Vis i kart</a></p></div>
+        <div class="kort"><h3>Antrekk</h3><p id="info-antrekk"></p></div>
+      </div>
+      <h3 class="under">Program</h3>
+      <ol class="program" id="program"></ol>
+    </section>
+
+    <section id="bilder" class="seksjon">
+      <h2>Gjennom 50 år</h2>
+      <div class="galleri" id="galleri"></div>
+      <div class="video" id="video" hidden></div>
+    </section>
+
+    <section id="svar" class="seksjon">
+      <h2>Kommer du?</h2>
+      <p>Gi beskjed innen <strong id="svarfrist"></strong>.</p>
+      <form id="rsvp-skjema" class="skjema">
+        <label>Navn<input name="navn" required maxlength="100" autocomplete="name"></label>
+        <label>E-post (valgfritt)<input name="epost" type="email" maxlength="200" autocomplete="email"></label>
+        <fieldset class="valg">
+          <legend>Kommer du?</legend>
+          <label><input type="radio" name="kommer" value="ja" required> Ja, selvfølgelig!</label>
+          <label><input type="radio" name="kommer" value="nei"> Dessverre ikke</label>
+        </fieldset>
+        <label>Antall personer (inkludert deg)<input name="antall" type="number" min="1" max="10" value="1"></label>
+        <label>Allergier eller matbehov<input name="allergier" maxlength="300"></label>
+        <label>Melding til Fredrik (valgfritt)<textarea name="melding" rows="3" maxlength="1000"></textarea></label>
+        <button class="knapp" type="submit">Send svar</button>
+        <p class="status" id="rsvp-status" role="status"></p>
+      </form>
+    </section>
+
+    <section id="gjestebok" class="seksjon">
+      <h2>Gjestebok</h2>
+      <p>Skriv en hilsen, et minne eller en god historie.</p>
+      <form id="gjestebok-skjema" class="skjema">
+        <label>Navn<input name="navn" required maxlength="100" autocomplete="name"></label>
+        <label>Hilsen<textarea name="tekst" rows="3" required maxlength="2000"></textarea></label>
+        <button class="knapp" type="submit">Skriv i gjesteboka</button>
+        <p class="status" id="gjestebok-status" role="status"></p>
+      </form>
+      <ul class="hilsener" id="hilsener"></ul>
+    </section>
+  </main>
+
+  <footer><p>Gleder meg til å se deg! 🎉</p><p class="demo" id="demo-varsel" hidden>Demomodus: databasen er ikke koblet til ennå, så innlegg lagres bare i denne nettleseren.</p></footer>
+
+  <script src="config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
