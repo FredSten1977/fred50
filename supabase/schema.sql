@@ -56,3 +56,28 @@ as $$
 $$;
 revoke all on function public.gjesteliste() from public;
 grant execute on function public.gjesteliste() to anon, authenticated;
+
+-- Bilder og video i gjesteboka. Vises med en gang. Vil du skjule en fil,
+-- sett godkjent = false i Table Editor -> gjestebok_media.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('gjestebok', 'gjestebok', true, 52428800, array['image/*', 'video/*'])
+on conflict (id) do nothing;
+
+create table if not exists public.gjestebok_media (
+  id bigint generated always as identity primary key,
+  created_at timestamptz not null default now(),
+  hilsen_id bigint not null references public.gjestebok (id) on delete cascade,
+  sti text not null unique check (char_length(sti) <= 200),
+  type text not null check (type in ('bilde', 'video')),
+  godkjent boolean not null default true
+);
+create index if not exists gjestebok_media_hilsen on public.gjestebok_media (hilsen_id);
+alter table public.gjestebok_media enable row level security;
+
+create policy "gjester kan legge ved filer" on public.gjestebok_media
+  for insert to anon with check (godkjent);
+create policy "alle ser synlige filer" on public.gjestebok_media
+  for select to anon using (godkjent);
+
+create policy "gjester kan laste opp til gjesteboka" on storage.objects
+  for insert to anon with check (bucket_id = 'gjestebok');

@@ -142,7 +142,7 @@
 
   async function hentHilsener() {
     if (!db) return lokal.hent("fred50_gjestebok");
-    const { data, error } = await db.from("gjestebok").select("navn, tekst, created_at").order("created_at", { ascending: false }).limit(200);
+    const { data, error } = await db.from("gjestebok").select("navn, tekst, created_at, gjestebok_media(sti, type)").order("created_at", { ascending: false }).limit(200);
     if (error) throw error;
     return data;
   }
@@ -185,10 +185,99 @@
     melding: tekst(fd, "melding") || null,
   }), "rsvp", (r) => r.kommer ? `Takk, ${r.navn}! Gleder meg til å se deg. 🎉` : `Takk for beskjed, ${r.navn}. Du blir savnet!`, visGjester);
 
-  koblesTil("gjestebok-skjema", "gjestebok-status", (fd) => ({
-    navn: tekst(fd, "navn"),
-    tekst: tekst(fd, "tekst"),
-  }), "gjestebok", () => "Takk for hilsenen!", visHilsener);
+  // --- Gjestebok med bilder og video ---
+  const MAKS_BYTES = 50 * 1024 * 1024;
+  let valgte = [];
+  const mediaInput = $("media-input");
+
+  function visValgte() {
+    $("valgte").replaceChildren(...valgte.map((fil, i) => {
+      const li = document.createElement("li");
+      const url = URL.createObjectURL(fil);
+      const el = document.createElement(fil.type.startsWith("video") ? "video" : "img");
+      el.src = url;
+      if (el.tagName === "VIDEO") { el.muted = true; el.playsInline = true; }
+      const fjern = document.createElement("button");
+      fjern.type = "button"; fjern.textContent = "×"; fjern.setAttribute("aria-label", "Fjern");
+      fjern.addEventListener("click", () => { valgte.splice(i, 1); visValgte(); });
+      li.append(el, fjern);
+      return li;
+    }));
+  }
+
+  mediaInput.addEventListener("change", () => {
+    const forStore = [];
+    for (const fil of mediaInput.files) {
+      if (!/^(image|video)\//.test(fil.type)) continue;
+      if (fil.type.startsWith("video") && fil.size > MAKS_BYTES) { forStore.push(fil.name); continue; }
+      valgte.push(fil);
+    }
+    mediaInput.value = "";
+    visValgte();
+    if (forStore.length) visStatus("gjestebok-status", "Videoen er for stor (over 50 MB). Prøv et kortere klipp.", false);
+  });
+
+  // Gjør bilder mindre før opplasting, så det går raskt på mobilnett.
+  async function krympBilde(fil) {
+    if (!fil.type.startsWith("image") || fil.type === "image/gif") return fil;
+    try {
+      const bmp = await createImageBitmap(fil, { imageOrientation: "from-image" });
+      const skala = Math.min(1, 2000 / Math.max(bmp.width, bmp.height));
+      const c = document.createElement("canvas");
+      c.width = Math.round(bmp.width * skala); c.height = Math.round(bmp.height * skala);
+      c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height);
+      const blob = await new Promise((ok) => c.toBlob(ok, "image/jpeg", 0.85));
+      return blob && blob.size < fil.size ? new File([blob], "bilde.jpg", { type: "image/jpeg" }) : fil;
+    } catch {
+      return fil;
+    }
+  }
+
+  function filendelse(fil) {
+    const fraNavn = (fil.name.match(/\.([a-z0-9]{1,5})$/i) || [])[1];
+    return (fraNavn || fil.type.split("/")[1] || "bin").toLowerCase();
+  }
+
+  async function lastOpp(hilsenId, filer, status) {
+    for (let i = 0; i < filer.length; i++) {
+      status(`Laster opp ${i + 1} av ${filer.length} …`);
+      const fil = await krympBilde(filer[i]);
+      const sti = `${hilsenId}/${crypto.randomUUID()}.${filendelse(fil)}`;
+      const opp = await db.storage.from("gjestebok").upload(sti, fil, { contentType: fil.type });
+      if (opp.error) throw opp.error;
+      const { error } = await db.from("gjestebok_media").insert({
+        hilsen_id: hilsenId, sti, type: fil.type.startsWith("video") ? "video" : "bilde",
+      });
+      if (error) throw error;
+    }
+  }
+
+  $("gjestebok-skjema").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const skjema = e.target;
+    const knapp = skjema.querySelector("button[type=submit]");
+    const fd = new FormData(skjema);
+    const rad = { navn: tekst(fd, "navn"), tekst: tekst(fd, "tekst") };
+    knapp.disabled = true;
+    try {
+      if (!db) {
+        await lagre("gjestebok", rad);
+      } else {
+        const { data, error } = await db.from("gjestebok").insert(rad).select("id").single();
+        if (error) throw error;
+        if (valgte.length) await lastOpp(data.id, valgte, (t) => visStatus("gjestebok-status", t, true));
+      }
+      visStatus("gjestebok-status", "Takk for hilsenen!", true);
+      skjema.reset();
+      valgte = []; visValgte();
+      await visHilsener();
+    } catch (err) {
+      console.error(err);
+      visStatus("gjestebok-status", "Noe gikk galt. Prøv igjen litt senere.", false);
+    } finally {
+      knapp.disabled = false;
+    }
+  });
 
   async function visHilsener() {
     const liste = $("hilsener");
@@ -200,7 +289,29 @@
         p.textContent = r.tekst;
         const s = document.createElement("small");
         s.textContent = "– " + r.navn + ", " + new Date(r.created_at).toLocaleDateString("no-NO", { day: "numeric", month: "long", year: "numeric" });
-        li.append(p, s);
+        li.append(p);
+        const media = r.gjestebok_media || [];
+        if (media.length) {
+          const boks = document.createElement("div");
+          boks.className = "hilsen-media";
+          media.forEach((m) => {
+            const url = db.storage.from("gjestebok").getPublicUrl(m.sti).data.publicUrl;
+            if (m.type === "video") {
+              const v = document.createElement("video");
+              v.src = url; v.controls = true; v.playsInline = true; v.preload = "metadata";
+              boks.append(v);
+            } else {
+              const a = document.createElement("a");
+              a.href = url; a.target = "_blank"; a.rel = "noopener";
+              const img = document.createElement("img");
+              img.src = url; img.alt = "Bilde fra " + r.navn; img.loading = "lazy";
+              a.append(img);
+              boks.append(a);
+            }
+          });
+          li.append(boks);
+        }
+        li.append(s);
         return li;
       }));
     } catch (err) {

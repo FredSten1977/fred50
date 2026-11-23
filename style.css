@@ -145,6 +145,18 @@ main { max-width: 900px; margin: 0 auto; padding: 0 16px; }
   padding: 8px 18px; font-weight: 500;
 }
 .gjesteliste li::before { content: "✦ "; color: var(--gull); }
+.vedlegg { display: grid; gap: 8px; justify-items: start; }
+.knapp.sekundaer { background: transparent; color: var(--tekst); border: 1px solid var(--gull); font-weight: 500; }
+.knapp.sekundaer:hover { background: var(--kant); }
+.valgte { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.valgte li { position: relative; width: 72px; height: 72px; border-radius: 10px; overflow: hidden; background: var(--kant); }
+.valgte img, .valgte video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.valgte button {
+  position: absolute; top: 2px; right: 2px; width: 22px; height: 22px; border: 0; border-radius: 50%;
+  background: rgba(0,0,0,.65); color: #fff; cursor: pointer; font-size: 14px; line-height: 22px; padding: 0;
+}
+.hilsen-media { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; margin: 10px 0 6px; }
+.hilsen-media img, .hilsen-media video { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 10px; display: block; background: #000; }
 .hilsener { list-style: none; padding: 0; margin: 24px 0 0; display: grid; gap: 12px; }
 .hilsener li { background: var(--flate); border: 1px solid var(--kant); border-left: 4px solid var(--gull); border-radius: var(--radius); padding: 16px 20px; }
 .hilsener p { margin: 0 0 6px; white-space: pre-wrap; }
