@@ -81,3 +81,36 @@ create policy "alle ser synlige filer" on public.gjestebok_media
 
 create policy "gjester kan laste opp til gjesteboka" on storage.objects
   for insert to anon with check (bucket_id = 'gjestebok');
+
+-- Kommentarer på innlegg i gjesteboka.
+create table if not exists public.gjestebok_kommentar (
+  id bigint generated always as identity primary key,
+  created_at timestamptz not null default now(),
+  hilsen_id bigint not null references public.gjestebok (id) on delete cascade,
+  navn text not null check (char_length(navn) between 1 and 100),
+  tekst text not null check (char_length(tekst) between 1 and 1000)
+);
+create index if not exists gjestebok_kommentar_hilsen on public.gjestebok_kommentar (hilsen_id);
+alter table public.gjestebok_kommentar enable row level security;
+
+create policy "alle kan lese kommentarer" on public.gjestebok_kommentar
+  for select to anon using (true);
+create policy "alle kan kommentere" on public.gjestebok_kommentar
+  for insert to anon with check (true);
+
+-- Bilder og video i kommentarer.
+create table if not exists public.gjestebok_kommentar_media (
+  id bigint generated always as identity primary key,
+  created_at timestamptz not null default now(),
+  kommentar_id bigint not null references public.gjestebok_kommentar (id) on delete cascade,
+  sti text not null unique check (char_length(sti) <= 200),
+  type text not null check (type in ('bilde', 'video')),
+  godkjent boolean not null default true
+);
+create index if not exists gjestebok_kommentar_media_kommentar on public.gjestebok_kommentar_media (kommentar_id);
+alter table public.gjestebok_kommentar_media enable row level security;
+
+create policy "gjester kan legge ved filer i kommentarer" on public.gjestebok_kommentar_media
+  for insert to anon with check (godkjent);
+create policy "alle ser synlige filer i kommentarer" on public.gjestebok_kommentar_media
+  for select to anon using (godkjent);

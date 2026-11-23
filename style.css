@@ -157,9 +157,33 @@ main { max-width: 900px; margin: 0 auto; padding: 0 16px; }
 }
 .hilsen-media { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; margin: 10px 0 6px; }
 .hilsen-media img, .hilsen-media video { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 10px; display: block; background: #000; }
+.kommentarer { margin-top: 10px; border-top: 1px dashed var(--kant); padding-top: 8px; }
+.kommentarer ul { list-style: none; margin: 0 0 6px; padding: 0; display: grid; gap: 6px; }
+.kommentarer li { font-size: .92rem; background: var(--bg); border-radius: 10px; padding: 6px 10px; }
+.svar-knapp { background: none; border: 0; padding: 4px 0; color: var(--gull-mork); font: 500 .9rem Inter, sans-serif; cursor: pointer; }
+.kommentar-skjema { display: flex; flex-wrap: wrap; gap: 6px; }
+.kommentar-skjema[hidden] { display: none; }
+.kommentar-skjema input {
+  font: inherit; font-size: .92rem; padding: 8px 10px; border-radius: 10px;
+  border: 1px solid var(--kant); background: var(--bg); color: var(--tekst);
+}
+.kommentar-skjema input[name=navn] { flex: 1 1 110px; }
+.kommentar-skjema input[name=tekst] { flex: 3 1 200px; }
+.kommentar-skjema .kamera {
+  display: grid; place-items: center; width: 38px; border-radius: 10px; cursor: pointer;
+  border: 1px solid var(--kant); background: var(--bg); font-size: 1.1rem;
+}
+.kommentar-skjema .valgte { flex-basis: 100%; }
+.kommentar-skjema .valgte li { width: 56px; height: 56px; }
+.kommentar-skjema .status { flex-basis: 100%; font-size: .85rem; min-height: 0; }
+.kommentarer .hilsen-media { grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); margin: 6px 0 2px; }
+.kommentar-skjema button[type=submit] {
+  border: 0; border-radius: 999px; padding: 8px 16px; background: #d9a94a; color: #1f1a17;
+  font: 600 .9rem Inter, sans-serif; cursor: pointer;
+}
 .hilsener { list-style: none; padding: 0; margin: 24px 0 0; display: grid; gap: 12px; }
-.hilsener li { background: var(--flate); border: 1px solid var(--kant); border-left: 4px solid var(--gull); border-radius: var(--radius); padding: 16px 20px; }
-.hilsener p { margin: 0 0 6px; white-space: pre-wrap; }
+.hilsener > li { background: var(--flate); border: 1px solid var(--kant); border-left: 4px solid var(--gull); border-radius: var(--radius); padding: 16px 20px; }
+.hilsener > li > p { margin: 0 0 6px; white-space: pre-wrap; }
 .hilsener small { color: var(--dempet); }
 
 .musikk {

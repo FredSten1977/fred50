@@ -142,7 +142,7 @@
 
   async function hentHilsener() {
     if (!db) return lokal.hent("fred50_gjestebok");
-    const { data, error } = await db.from("gjestebok").select("navn, tekst, created_at, gjestebok_media(sti, type)").order("created_at", { ascending: false }).limit(200);
+    const { data, error } = await db.from("gjestebok").select("id, navn, tekst, created_at, gjestebok_media(sti, type), gjestebok_kommentar(id, navn, tekst, created_at, gjestebok_kommentar_media(sti, type))").order("created_at", { ascending: false }).limit(200);
     if (error) throw error;
     return data;
   }
@@ -185,37 +185,46 @@
     melding: tekst(fd, "melding") || null,
   }), "rsvp", (r) => r.kommer ? `Takk, ${r.navn}! Gleder meg til å se deg. 🎉` : `Takk for beskjed, ${r.navn}. Du blir savnet!`, visGjester);
 
+  const husketNavn = {
+    hent() { try { return localStorage.getItem("fred50_navn") || ""; } catch { return ""; } },
+    lagre(n) { try { localStorage.setItem("fred50_navn", n); } catch {} },
+  };
+
   // --- Gjestebok med bilder og video ---
   const MAKS_BYTES = 50 * 1024 * 1024;
-  let valgte = [];
-  const mediaInput = $("media-input");
 
-  function visValgte() {
-    $("valgte").replaceChildren(...valgte.map((fil, i) => {
-      const li = document.createElement("li");
-      const url = URL.createObjectURL(fil);
-      const el = document.createElement(fil.type.startsWith("video") ? "video" : "img");
-      el.src = url;
-      if (el.tagName === "VIDEO") { el.muted = true; el.playsInline = true; }
-      const fjern = document.createElement("button");
-      fjern.type = "button"; fjern.textContent = "×"; fjern.setAttribute("aria-label", "Fjern");
-      fjern.addEventListener("click", () => { valgte.splice(i, 1); visValgte(); });
-      li.append(el, fjern);
-      return li;
-    }));
-  }
-
-  mediaInput.addEventListener("change", () => {
-    const forStore = [];
-    for (const fil of mediaInput.files) {
-      if (!/^(image|video)\//.test(fil.type)) continue;
-      if (fil.type.startsWith("video") && fil.size > MAKS_BYTES) { forStore.push(fil.name); continue; }
-      valgte.push(fil);
+  // Kobler en filvelger til en forhåndsvisningsliste. Returnerer de valgte filene.
+  function lagVelger(input, liste, feil) {
+    let filer = [];
+    function vis() {
+      liste.replaceChildren(...filer.map((fil, i) => {
+        const li = document.createElement("li");
+        const el = document.createElement(fil.type.startsWith("video") ? "video" : "img");
+        el.src = URL.createObjectURL(fil);
+        if (el.tagName === "VIDEO") { el.muted = true; el.playsInline = true; }
+        const fjern = document.createElement("button");
+        fjern.type = "button"; fjern.textContent = "×"; fjern.setAttribute("aria-label", "Fjern");
+        fjern.addEventListener("click", () => { filer.splice(i, 1); vis(); });
+        li.append(el, fjern);
+        return li;
+      }));
     }
-    mediaInput.value = "";
-    visValgte();
-    if (forStore.length) visStatus("gjestebok-status", "Videoen er for stor (over 50 MB). Prøv et kortere klipp.", false);
-  });
+    input.addEventListener("change", () => {
+      let forStor = false;
+      for (const fil of input.files) {
+        if (!/^(image|video)\//.test(fil.type)) continue;
+        if (fil.type.startsWith("video") && fil.size > MAKS_BYTES) { forStor = true; continue; }
+        filer.push(fil);
+      }
+      input.value = "";
+      vis();
+      if (forStor) feil("Videoen er for stor (over 50 MB). Prøv et kortere klipp.");
+    });
+    return {
+      get filer() { return filer; },
+      tøm() { filer = []; vis(); },
+    };
+  }
 
   // Gjør bilder mindre før opplasting, så det går raskt på mobilnett.
   async function krympBilde(fil) {
@@ -238,19 +247,45 @@
     return (fraNavn || fil.type.split("/")[1] || "bin").toLowerCase();
   }
 
-  async function lastOpp(hilsenId, filer, status) {
+  // Laster opp filene og knytter dem til en hilsen eller en kommentar.
+  async function lastOpp(tabell, kobling, filer, status) {
+    const [felt, id] = Object.entries(kobling)[0];
     for (let i = 0; i < filer.length; i++) {
       status(`Laster opp ${i + 1} av ${filer.length} …`);
       const fil = await krympBilde(filer[i]);
-      const sti = `${hilsenId}/${crypto.randomUUID()}.${filendelse(fil)}`;
+      const sti = `${felt}-${id}/${crypto.randomUUID()}.${filendelse(fil)}`;
       const opp = await db.storage.from("gjestebok").upload(sti, fil, { contentType: fil.type });
       if (opp.error) throw opp.error;
-      const { error } = await db.from("gjestebok_media").insert({
-        hilsen_id: hilsenId, sti, type: fil.type.startsWith("video") ? "video" : "bilde",
+      const { error } = await db.from(tabell).insert({
+        ...kobling, sti, type: fil.type.startsWith("video") ? "video" : "bilde",
       });
       if (error) throw error;
     }
   }
+
+  function lagMedia(media, navn) {
+    const boks = document.createElement("div");
+    boks.className = "hilsen-media";
+    media.forEach((m) => {
+      const url = db.storage.from("gjestebok").getPublicUrl(m.sti).data.publicUrl;
+      if (m.type === "video") {
+        const v = document.createElement("video");
+        v.src = url; v.controls = true; v.playsInline = true; v.preload = "metadata";
+        boks.append(v);
+      } else {
+        const a = document.createElement("a");
+        a.href = url; a.target = "_blank"; a.rel = "noopener";
+        const img = document.createElement("img");
+        img.src = url; img.alt = "Bilde fra " + navn; img.loading = "lazy";
+        a.append(img);
+        boks.append(a);
+      }
+    });
+    return boks;
+  }
+
+  $("gjestebok-skjema").navn.value = husketNavn.hent();
+  const hilsenVelger = lagVelger($("media-input"), $("valgte"), (t) => visStatus("gjestebok-status", t, false));
 
   $("gjestebok-skjema").addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -265,11 +300,14 @@
       } else {
         const { data, error } = await db.from("gjestebok").insert(rad).select("id").single();
         if (error) throw error;
-        if (valgte.length) await lastOpp(data.id, valgte, (t) => visStatus("gjestebok-status", t, true));
+        if (hilsenVelger.filer.length) {
+          await lastOpp("gjestebok_media", { hilsen_id: data.id }, hilsenVelger.filer, (t) => visStatus("gjestebok-status", t, true));
+        }
       }
+      husketNavn.lagre(rad.navn);
       visStatus("gjestebok-status", "Takk for hilsenen!", true);
       skjema.reset();
-      valgte = []; visValgte();
+      hilsenVelger.tøm();
       await visHilsener();
     } catch (err) {
       console.error(err);
@@ -278,6 +316,76 @@
       knapp.disabled = false;
     }
   });
+
+  // --- Kommentarer på innlegg ---
+  let velgerNr = 0;
+
+  function lagKommentarer(r) {
+    const boks = document.createElement("div");
+    boks.className = "kommentarer";
+    const kommentarer = (r.gjestebok_kommentar || []).slice().sort((a, b) => a.created_at.localeCompare(b.created_at));
+    if (kommentarer.length) {
+      const ul = document.createElement("ul");
+      kommentarer.forEach((k) => {
+        const li = document.createElement("li");
+        const b = document.createElement("b");
+        b.textContent = k.navn + " ";
+        li.append(b, document.createTextNode(k.tekst));
+        const media = k.gjestebok_kommentar_media || [];
+        if (media.length) li.append(lagMedia(media, k.navn));
+        ul.append(li);
+      });
+      boks.append(ul);
+    }
+
+    const knapp = document.createElement("button");
+    knapp.type = "button"; knapp.className = "svar-knapp";
+    knapp.textContent = kommentarer.length ? "💬 Kommenter" : "💬 Svar";
+
+    const id = "kommentar-media-" + ++velgerNr;
+    const skjema = document.createElement("form");
+    skjema.className = "kommentar-skjema"; skjema.hidden = true;
+    skjema.innerHTML =
+      '<input name="navn" placeholder="Navn" required maxlength="100" autocomplete="name">' +
+      '<input name="tekst" placeholder="Skriv en kommentar …" required maxlength="1000">' +
+      `<label class="kamera" for="${id}" title="Legg ved bilde eller video" aria-label="Legg ved bilde eller video">📷</label>` +
+      `<input id="${id}" type="file" accept="image/*,video/*" multiple hidden>` +
+      '<button type="submit">Send</button>' +
+      '<ul class="valgte"></ul><p class="status"></p>';
+    const status = skjema.querySelector(".status");
+    const velger = lagVelger(skjema.querySelector("input[type=file]"), skjema.querySelector(".valgte"),
+      (t) => { status.textContent = t; status.className = "status feil"; });
+    skjema.navn.value = husketNavn.hent();
+
+    knapp.addEventListener("click", () => {
+      knapp.hidden = true; skjema.hidden = false;
+      (skjema.navn.value ? skjema.tekst : skjema.navn).focus();
+    });
+    skjema.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const send = skjema.querySelector("button[type=submit]");
+      const navn = skjema.navn.value.trim(), tekst = skjema.tekst.value.trim();
+      if (!navn || !tekst) return;
+      send.disabled = true;
+      try {
+        const { data, error } = await db.from("gjestebok_kommentar").insert({ hilsen_id: r.id, navn, tekst }).select("id").single();
+        if (error) throw error;
+        if (velger.filer.length) {
+          await lastOpp("gjestebok_kommentar_media", { kommentar_id: data.id }, velger.filer,
+            (t) => { status.textContent = t; status.className = "status ok"; });
+        }
+        husketNavn.lagre(navn);
+        await visHilsener();
+      } catch (err) {
+        console.error(err);
+        status.textContent = "Noe gikk galt. Prøv igjen."; status.className = "status feil";
+        send.disabled = false;
+      }
+    });
+
+    boks.append(knapp, skjema);
+    return boks;
+  }
 
   async function visHilsener() {
     const liste = $("hilsener");
@@ -291,27 +399,9 @@
         s.textContent = "– " + r.navn + ", " + new Date(r.created_at).toLocaleDateString("no-NO", { day: "numeric", month: "long", year: "numeric" });
         li.append(p);
         const media = r.gjestebok_media || [];
-        if (media.length) {
-          const boks = document.createElement("div");
-          boks.className = "hilsen-media";
-          media.forEach((m) => {
-            const url = db.storage.from("gjestebok").getPublicUrl(m.sti).data.publicUrl;
-            if (m.type === "video") {
-              const v = document.createElement("video");
-              v.src = url; v.controls = true; v.playsInline = true; v.preload = "metadata";
-              boks.append(v);
-            } else {
-              const a = document.createElement("a");
-              a.href = url; a.target = "_blank"; a.rel = "noopener";
-              const img = document.createElement("img");
-              img.src = url; img.alt = "Bilde fra " + r.navn; img.loading = "lazy";
-              a.append(img);
-              boks.append(a);
-            }
-          });
-          li.append(boks);
-        }
+        if (media.length) li.append(lagMedia(media, r.navn));
         li.append(s);
+        if (db && r.id) li.append(lagKommentarer(r));
         return li;
       }));
     } catch (err) {
