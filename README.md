@@ -35,9 +35,15 @@ lagres bare i nettleseren til den som skriver.
    er låst slik at gjester bare kan sende svar og lese/skrive i gjesteboka.
    Bruk **aldri** `service_role`-nøkkelen her.
 
-**Se hvem som kommer:** i Supabase, åpne **Table Editor → rsvp**. For en rask
-opptelling, kjør `select * from rsvp_oversikt;` i SQL Editor.
-**Fjerne en upassende hilsen:** Table Editor → gjestebok → slett raden.
+Databasen ligger i Supabase-prosjektet **my-caddie**. Alle festtabellene har
+navn som begynner med `fest_`, og bilder fra gjestene ligger i bøtta `fest`.
+
+**Se hvem som kommer:** i Supabase, åpne **Table Editor → fest_rsvp**. For en
+rask opptelling, kjør `select * from fest_rsvp_oversikt;` i SQL Editor.
+
+**Slette innlegg og bilder:** åpne siden med admin-lenken
+(`…/fred50/?admin=KODE`). Da får du en 🗑-knapp på galleriet, innlegg,
+kommentarer og vedlegg. Mobilen husker deg til du trykker «Logg ut».
 
 ## 2. Publisere siden
 

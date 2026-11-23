@@ -92,13 +92,13 @@
 
   async function lagre(tabell, rad) {
     if (!db) { lokal.legg("fred50_" + tabell, { ...rad, created_at: new Date().toISOString() }); return; }
-    const { error } = await db.from(tabell).insert(rad);
+    const { error } = await db.from("fest_" + tabell).insert(rad);
     if (error) throw error;
   }
 
   async function hentGjester() {
     if (!db) return lokal.hent("fred50_rsvp").filter((r) => r.kommer).reverse();
-    const { data, error } = await db.rpc("gjesteliste");
+    const { data, error } = await db.rpc("fest_gjesteliste");
     if (error) throw error;
     return data;
   }
@@ -120,7 +120,7 @@
 
   async function hentHilsener() {
     if (!db) return lokal.hent("fred50_gjestebok");
-    const { data, error } = await db.from("gjestebok").select("id, navn, tekst, created_at, gjestebok_media(id, sti, type), gjestebok_kommentar(id, navn, tekst, created_at, gjestebok_kommentar_media(id, sti, type))").order("created_at", { ascending: false }).limit(200);
+    const { data, error } = await db.from("fest_gjestebok").select("id, navn, tekst, created_at, fest_media(id, sti, type), fest_kommentar(id, navn, tekst, created_at, fest_kommentar_media(id, sti, type))").order("created_at", { ascending: false }).limit(200);
     if (error) throw error;
     return data;
   }
@@ -232,7 +232,7 @@
       status(`Laster opp ${i + 1} av ${filer.length} …`);
       const fil = await krympBilde(filer[i]);
       const sti = `${felt}-${id}/${crypto.randomUUID()}.${filendelse(fil)}`;
-      const opp = await db.storage.from("gjestebok").upload(sti, fil, { contentType: fil.type });
+      const opp = await db.storage.from("fest").upload(sti, fil, { contentType: fil.type });
       if (opp.error) throw opp.error;
       const { error } = await db.from(tabell).insert({
         ...kobling, sti, type: fil.type.startsWith("video") ? "video" : "bilde",
@@ -247,7 +247,7 @@
     media.forEach((m) => {
       const ramme = document.createElement("div");
       ramme.className = "media-ramme";
-      const url = db.storage.from("gjestebok").getPublicUrl(m.sti).data.publicUrl;
+      const url = db.storage.from("fest").getPublicUrl(m.sti).data.publicUrl;
       if (m.type === "video") {
         const v = document.createElement("video");
         v.src = url; v.controls = true; v.playsInline = true; v.preload = "metadata";
@@ -280,10 +280,10 @@
       if (!db) {
         await lagre("gjestebok", rad);
       } else {
-        const { data, error } = await db.from("gjestebok").insert(rad).select("id").single();
+        const { data, error } = await db.from("fest_gjestebok").insert(rad).select("id").single();
         if (error) throw error;
         if (hilsenVelger.filer.length) {
-          await lastOpp("gjestebok_media", { hilsen_id: data.id }, hilsenVelger.filer, (t) => visStatus("gjestebok-status", t, true));
+          await lastOpp("fest_media", { hilsen_id: data.id }, hilsenVelger.filer, (t) => visStatus("gjestebok-status", t, true));
         }
       }
       husketNavn.lagre(rad.navn);
@@ -305,7 +305,7 @@
   function lagKommentarer(r) {
     const boks = document.createElement("div");
     boks.className = "kommentarer";
-    const kommentarer = (r.gjestebok_kommentar || []).slice().sort((a, b) => a.created_at.localeCompare(b.created_at));
+    const kommentarer = (r.fest_kommentar || []).slice().sort((a, b) => a.created_at.localeCompare(b.created_at));
     if (kommentarer.length) {
       const ul = document.createElement("ul");
       kommentarer.forEach((k) => {
@@ -313,9 +313,9 @@
         const b = document.createElement("b");
         b.textContent = k.navn + " ";
         li.append(b, document.createTextNode(k.tekst));
-        const media = k.gjestebok_kommentar_media || [];
-        if (media.length) li.append(lagMedia(media, k.navn, "gjestebok_kommentar_media"));
-        if (admin.kode) li.append(slettKnapp("gjestebok_kommentar", k.id, "denne kommentaren", visHilsener));
+        const media = k.fest_kommentar_media || [];
+        if (media.length) li.append(lagMedia(media, k.navn, "fest_kommentar_media"));
+        if (admin.kode) li.append(slettKnapp("fest_kommentar", k.id, "denne kommentaren", visHilsener));
         ul.append(li);
       });
       boks.append(ul);
@@ -351,10 +351,10 @@
       if (!navn || !tekst) return;
       send.disabled = true;
       try {
-        const { data, error } = await db.from("gjestebok_kommentar").insert({ hilsen_id: r.id, navn, tekst }).select("id").single();
+        const { data, error } = await db.from("fest_kommentar").insert({ hilsen_id: r.id, navn, tekst }).select("id").single();
         if (error) throw error;
         if (velger.filer.length) {
-          await lastOpp("gjestebok_kommentar_media", { kommentar_id: data.id }, velger.filer,
+          await lastOpp("fest_kommentar_media", { kommentar_id: data.id }, velger.filer,
             (t) => { status.textContent = t; status.className = "status ok"; });
         }
         husketNavn.lagre(navn);
@@ -381,10 +381,10 @@
         const s = document.createElement("small");
         s.textContent = "– " + r.navn + ", " + new Date(r.created_at).toLocaleDateString("no-NO", { day: "numeric", month: "long", year: "numeric" });
         li.append(p);
-        const media = r.gjestebok_media || [];
-        if (media.length) li.append(lagMedia(media, r.navn, "gjestebok_media"));
+        const media = r.fest_media || [];
+        if (media.length) li.append(lagMedia(media, r.navn, "fest_media"));
         li.append(s);
-        if (admin.kode && r.id) li.append(slettKnapp("gjestebok", r.id, "hele innlegget", visHilsener));
+        if (admin.kode && r.id) li.append(slettKnapp("fest_gjestebok", r.id, "hele innlegget", visHilsener));
         if (db && r.id) li.append(lagKommentarer(r));
         return li;
       }));
@@ -401,7 +401,7 @@
     if (kode) history.replaceState(null, "", location.pathname + location.hash);
     else { try { kode = localStorage.getItem("fred50_admin"); } catch {} }
     if (!kode || !db) return;
-    const { data, error } = await db.rpc("er_admin", { kode });
+    const { data, error } = await db.rpc("fest_er_admin", { kode });
     if (error || data !== true) { try { localStorage.removeItem("fred50_admin"); } catch {} return; }
     admin.kode = kode;
     try { localStorage.setItem("fred50_admin", kode); } catch {}
@@ -421,7 +421,7 @@
       e.preventDefault(); e.stopPropagation();
       if (!confirm("Slette " + hva + "?")) return;
       knapp.disabled = true;
-      const { error } = await db.rpc("admin_slett", { kode: admin.kode, tabell, rad_id: id });
+      const { error } = await db.rpc("fest_admin_slett", { kode: admin.kode, tabell, rad_id: id });
       if (error) { console.error(error); alert("Kunne ikke slette. Prøv igjen."); knapp.disabled = false; return; }
       await etter();
     });
@@ -431,7 +431,7 @@
   // --- Bildegalleri: fra databasen når den finnes, ellers fra config.js ---
   async function hentGalleri() {
     if (db) {
-      const { data, error } = await db.from("galleri").select("id, sti").order("rekkefolge");
+      const { data, error } = await db.from("fest_galleri").select("id, sti").order("rekkefolge");
       if (!error && data.length) return data.map((r) => ({ id: r.id, fil: r.sti }));
     }
     return F.bilder.map((b) => typeof b === "string" ? { fil: b } : b);
@@ -457,7 +457,7 @@
         cap.textContent = b.tekst;
         fig.append(cap);
       }
-      if (admin.kode && b.id) fig.append(slettKnapp("galleri", b.id, "bildet fra galleriet", visGalleri));
+      if (admin.kode && b.id) fig.append(slettKnapp("fest_galleri", b.id, "bildet fra galleriet", visGalleri));
       return fig;
     }));
   }

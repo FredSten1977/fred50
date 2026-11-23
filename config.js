@@ -31,7 +31,9 @@ window.FEST = {
   // Rundt portrett på forsiden. Tom tekst skjuler det.
   portrett: "",
 
-  // Bilder: legg filer i mappen bilder/ og skriv filnavnene her.
+  // Bilder: brukes bare når databasen ikke svarer. Til vanlig hentes
+  // galleriet fra tabellen fest_galleri i Supabase.
+  // Legg filer i mappen bilder/ og skriv filnavnene her.
   // Vil du ha bildetekst, skriv { fil: "bilder/x.jpg", tekst: "..." }.
   // Tom liste viser plassholdere.
   bilder: [
@@ -68,6 +70,6 @@ window.FEST = {
 
   // Supabase (database for svar og gjestebok). Tomme verdier = demomodus
   // der innlegg bare lagres i nettleseren din.
-  supabaseUrl: "https://nrgsmolzahazhrmeutfi.supabase.co",
-  supabaseKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5yZ3Ntb2x6YWhhemhybWV1dGZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI4MzAyNTcsImV4cCI6MjEwODQwNjI1N30.rtPmspS1jaDw-EPl5UXFcLsa0Rn_Q0sMhyBwXAOU8gs",
+  supabaseUrl: "https://rhwbvviwdmkkpxqpuams.supabase.co",
+  supabaseKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJod2J2dml3ZG1ra3B4cXB1YW1zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2Njk3MDksImV4cCI6MjEwNjI0NTcwOX0.3z_GWhWgO4kJoLpN1pJZp25fgclftJvkOr_1o8GaaJ4",
 };

@@ -1,7 +1,9 @@
--- Tabeller for svar (RSVP) og gjestebok.
+-- Databasen for festsiden. Alt har navn som begynner med fest_, så det kan
+-- ligge i et Supabase-prosjekt som også brukes til andre ting.
 -- Kjør i Supabase: SQL Editor -> New query -> lim inn -> Run.
 
-create table if not exists public.rsvp (
+-- Svar på invitasjonen. Gjester kan sende svar, men ikke lese andres.
+create table public.fest_rsvp (
   id bigint generated always as identity primary key,
   created_at timestamptz not null default now(),
   navn text not null check (char_length(navn) between 1 and 100),
@@ -11,126 +13,110 @@ create table if not exists public.rsvp (
   allergier text check (char_length(allergier) <= 300),
   melding text check (char_length(melding) <= 1000)
 );
-
-create table if not exists public.gjestebok (
-  id bigint generated always as identity primary key,
-  created_at timestamptz not null default now(),
-  navn text not null check (char_length(navn) between 1 and 100),
-  tekst text not null check (char_length(tekst) between 1 and 2000)
-);
-
-alter table public.rsvp enable row level security;
-alter table public.gjestebok enable row level security;
-
--- Gjester kan sende svar, men ikke lese andres svar (bare du ser dem i Supabase).
-drop policy if exists "gjester kan svare" on public.rsvp;
-create policy "gjester kan svare" on public.rsvp
-  for insert to anon with check (true);
-
--- Gjesteboka er åpen: alle kan lese og skrive, ingen kan endre eller slette.
-drop policy if exists "alle kan lese gjestebok" on public.gjestebok;
-create policy "alle kan lese gjestebok" on public.gjestebok
-  for select to anon using (true);
-drop policy if exists "alle kan skrive i gjestebok" on public.gjestebok;
-create policy "alle kan skrive i gjestebok" on public.gjestebok
+alter table public.fest_rsvp enable row level security;
+create policy "fest: gjester kan svare" on public.fest_rsvp
   for insert to anon with check (true);
 
 -- Oversikt over hvem som kommer (åpnes i SQL Editor eller Table Editor).
-create or replace view public.rsvp_oversikt with (security_invoker = on) as
+create view public.fest_rsvp_oversikt with (security_invoker = on) as
   select
     count(*) filter (where kommer) as svar_ja,
     count(*) filter (where not kommer) as svar_nei,
     coalesce(sum(antall) filter (where kommer), 0) as personer_totalt
-  from public.rsvp;
-revoke all on public.rsvp_oversikt from anon, authenticated;
+  from public.fest_rsvp;
+revoke all on public.fest_rsvp_oversikt from anon, authenticated;
 
 -- Offentlig gjesteliste: gir bare ut navnene på dem som har takket ja.
-create or replace function public.gjesteliste()
+create function public.fest_gjesteliste()
 returns table (navn text)
 language sql
 stable
 security definer
 set search_path = ''
 as $$
-  select r.navn from public.rsvp r where r.kommer order by r.created_at;
+  select r.navn from public.fest_rsvp r where r.kommer order by r.created_at;
 $$;
-revoke all on function public.gjesteliste() from public;
-grant execute on function public.gjesteliste() to anon, authenticated;
 
--- Bilder og video i gjesteboka. Vises med en gang. Vil du skjule en fil,
--- sett godkjent = false i Table Editor -> gjestebok_media.
-insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-values ('gjestebok', 'gjestebok', true, 52428800, array['image/*', 'video/*'])
-on conflict (id) do nothing;
-
-create table if not exists public.gjestebok_media (
+-- Gjesteboka: alle kan lese og skrive, bare admin kan slette.
+create table public.fest_gjestebok (
   id bigint generated always as identity primary key,
   created_at timestamptz not null default now(),
-  hilsen_id bigint not null references public.gjestebok (id) on delete cascade,
-  sti text not null unique check (char_length(sti) <= 200),
-  type text not null check (type in ('bilde', 'video')),
-  godkjent boolean not null default true
+  navn text not null check (char_length(navn) between 1 and 100),
+  tekst text not null check (char_length(tekst) between 1 and 2000)
 );
-create index if not exists gjestebok_media_hilsen on public.gjestebok_media (hilsen_id);
-alter table public.gjestebok_media enable row level security;
+alter table public.fest_gjestebok enable row level security;
+create policy "fest: alle kan lese gjestebok" on public.fest_gjestebok
+  for select to anon using (true);
+create policy "fest: alle kan skrive i gjestebok" on public.fest_gjestebok
+  for insert to anon with check (true);
 
-create policy "gjester kan legge ved filer" on public.gjestebok_media
-  for insert to anon with check (godkjent);
-create policy "alle ser synlige filer" on public.gjestebok_media
-  for select to anon using (godkjent);
-
-create policy "gjester kan laste opp til gjesteboka" on storage.objects
-  for insert to anon with check (bucket_id = 'gjestebok');
-
--- Kommentarer på innlegg i gjesteboka.
-create table if not exists public.gjestebok_kommentar (
+create table public.fest_kommentar (
   id bigint generated always as identity primary key,
   created_at timestamptz not null default now(),
-  hilsen_id bigint not null references public.gjestebok (id) on delete cascade,
+  hilsen_id bigint not null references public.fest_gjestebok (id) on delete cascade,
   navn text not null check (char_length(navn) between 1 and 100),
   tekst text not null check (char_length(tekst) between 1 and 1000)
 );
-create index if not exists gjestebok_kommentar_hilsen on public.gjestebok_kommentar (hilsen_id);
-alter table public.gjestebok_kommentar enable row level security;
-
-create policy "alle kan lese kommentarer" on public.gjestebok_kommentar
+create index on public.fest_kommentar (hilsen_id);
+alter table public.fest_kommentar enable row level security;
+create policy "fest: alle kan lese kommentarer" on public.fest_kommentar
   for select to anon using (true);
-create policy "alle kan kommentere" on public.gjestebok_kommentar
+create policy "fest: alle kan kommentere" on public.fest_kommentar
   for insert to anon with check (true);
 
--- Bilder og video i kommentarer.
-create table if not exists public.gjestebok_kommentar_media (
+-- Bilder og video lagt ved innlegg og kommentarer. Filene ligger i bøtta «fest».
+create table public.fest_media (
   id bigint generated always as identity primary key,
   created_at timestamptz not null default now(),
-  kommentar_id bigint not null references public.gjestebok_kommentar (id) on delete cascade,
+  hilsen_id bigint not null references public.fest_gjestebok (id) on delete cascade,
   sti text not null unique check (char_length(sti) <= 200),
-  type text not null check (type in ('bilde', 'video')),
-  godkjent boolean not null default true
+  type text not null check (type in ('bilde', 'video'))
 );
-create index if not exists gjestebok_kommentar_media_kommentar on public.gjestebok_kommentar_media (kommentar_id);
-alter table public.gjestebok_kommentar_media enable row level security;
+create index on public.fest_media (hilsen_id);
+alter table public.fest_media enable row level security;
+create policy "fest: alle ser vedlegg" on public.fest_media
+  for select to anon using (true);
+create policy "fest: gjester kan legge ved filer" on public.fest_media
+  for insert to anon with check (true);
 
-create policy "gjester kan legge ved filer i kommentarer" on public.gjestebok_kommentar_media
-  for insert to anon with check (godkjent);
-create policy "alle ser synlige filer i kommentarer" on public.gjestebok_kommentar_media
-  for select to anon using (godkjent);
+create table public.fest_kommentar_media (
+  id bigint generated always as identity primary key,
+  created_at timestamptz not null default now(),
+  kommentar_id bigint not null references public.fest_kommentar (id) on delete cascade,
+  sti text not null unique check (char_length(sti) <= 200),
+  type text not null check (type in ('bilde', 'video'))
+);
+create index on public.fest_kommentar_media (kommentar_id);
+alter table public.fest_kommentar_media enable row level security;
+create policy "fest: alle ser vedlegg i kommentarer" on public.fest_kommentar_media
+  for select to anon using (true);
+create policy "fest: gjester kan legge ved filer i kommentarer" on public.fest_kommentar_media
+  for insert to anon with check (true);
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('fest', 'fest', true, 52428800, array['image/*', 'video/*'])
+on conflict (id) do nothing;
+create policy "fest: gjester kan laste opp" on storage.objects
+  for insert to anon with check (bucket_id = 'fest');
 
 -- Bildegalleriet. Radene peker til filer i mappen bilder/ i repoet.
-create table if not exists public.galleri (
+create table public.fest_galleri (
   id bigint generated always as identity primary key,
   sti text not null,
   rekkefolge int not null default 0
 );
-alter table public.galleri enable row level security;
-create policy "alle ser galleriet" on public.galleri for select to anon using (true);
+alter table public.fest_galleri enable row level security;
+create policy "fest: alle ser galleriet" on public.fest_galleri
+  for select to anon using (true);
 
 -- Admin: siden åpnes med ?admin=KODE. Bare en SHA-256-hash av koden lagres,
--- i en tabell gjester ikke har tilgang til. Legg inn en kode slik:
---   insert into private.admin_kode (hash) values (encode(extensions.digest('KODEN', 'sha256'), 'hex'));
-create schema if not exists private;
-create table if not exists private.admin_kode (hash text primary key);
+-- i et skjema gjester ikke har tilgang til. Legg inn en kode slik:
+--   insert into fest_private.admin_kode (hash)
+--   values (encode(extensions.digest('KODEN', 'sha256'), 'hex'));
+create schema fest_private;
+create table fest_private.admin_kode (hash text primary key);
 
-create or replace function public.er_admin(kode text)
+create function public.fest_er_admin(kode text)
 returns boolean
 language sql
 stable
@@ -138,33 +124,35 @@ security definer
 set search_path = ''
 as $$
   select exists (
-    select 1 from private.admin_kode
+    select 1 from fest_private.admin_kode
     where hash = encode(extensions.digest(kode, 'sha256'), 'hex')
   );
 $$;
 
-create or replace function public.admin_slett(kode text, tabell text, rad_id bigint)
+create function public.fest_admin_slett(kode text, tabell text, rad_id bigint)
 returns void
 language plpgsql
 security definer
 set search_path = ''
 as $$
 begin
-  if not public.er_admin(kode) then
+  if not public.fest_er_admin(kode) then
     raise exception 'ikke tilgang';
   end if;
   case tabell
-    when 'galleri' then delete from public.galleri where id = rad_id;
-    when 'gjestebok' then delete from public.gjestebok where id = rad_id;
-    when 'gjestebok_media' then delete from public.gjestebok_media where id = rad_id;
-    when 'gjestebok_kommentar' then delete from public.gjestebok_kommentar where id = rad_id;
-    when 'gjestebok_kommentar_media' then delete from public.gjestebok_kommentar_media where id = rad_id;
+    when 'fest_galleri' then delete from public.fest_galleri where id = rad_id;
+    when 'fest_gjestebok' then delete from public.fest_gjestebok where id = rad_id;
+    when 'fest_media' then delete from public.fest_media where id = rad_id;
+    when 'fest_kommentar' then delete from public.fest_kommentar where id = rad_id;
+    when 'fest_kommentar_media' then delete from public.fest_kommentar_media where id = rad_id;
     else raise exception 'ukjent tabell';
   end case;
 end;
 $$;
 
-revoke all on function public.er_admin(text) from public;
-revoke all on function public.admin_slett(text, text, bigint) from public;
-grant execute on function public.er_admin(text) to anon, authenticated;
-grant execute on function public.admin_slett(text, text, bigint) to anon, authenticated;
+revoke all on function public.fest_gjesteliste() from public;
+revoke all on function public.fest_er_admin(text) from public;
+revoke all on function public.fest_admin_slett(text, text, bigint) from public;
+grant execute on function public.fest_gjesteliste() to anon, authenticated;
+grant execute on function public.fest_er_admin(text) to anon, authenticated;
+grant execute on function public.fest_admin_slett(text, text, bigint) to anon, authenticated;
