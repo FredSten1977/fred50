@@ -181,6 +181,21 @@ main { max-width: 900px; margin: 0 auto; padding: 0 16px; }
   border: 0; border-radius: 999px; padding: 8px 16px; background: #d9a94a; color: #1f1a17;
   font: 600 .9rem Inter, sans-serif; cursor: pointer;
 }
+.admin-banner {
+  position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 20;
+  background: #c0392b; color: #fff; padding: 8px 14px; border-radius: 999px; font-size: .9rem;
+  box-shadow: 0 4px 16px rgba(0,0,0,.25); white-space: nowrap;
+}
+.admin-banner[hidden] { display: none; }
+.admin-banner button { margin-left: 8px; border: 0; border-radius: 999px; padding: 4px 10px; cursor: pointer; font: inherit; }
+.slett {
+  border: 0; border-radius: 999px; background: rgba(192,57,43,.92); color: #fff;
+  width: 32px; height: 32px; cursor: pointer; font-size: 15px; line-height: 32px; padding: 0;
+}
+.galleri figure, .media-ramme, .hilsener > li, .kommentarer li { position: relative; }
+.galleri .slett, .media-ramme .slett { position: absolute; top: 6px; right: 6px; }
+.hilsener > li > .slett { position: absolute; top: 10px; right: 10px; }
+.kommentarer li > .slett { position: absolute; top: 4px; right: 4px; width: 26px; height: 26px; line-height: 26px; font-size: 12px; }
 .hilsener { list-style: none; padding: 0; margin: 24px 0 0; display: grid; gap: 12px; }
 .hilsener > li { background: var(--flate); border: 1px solid var(--kant); border-left: 4px solid var(--gull); border-radius: var(--radius); padding: 16px 20px; }
 .hilsener > li > p { margin: 0 0 6px; white-space: pre-wrap; }

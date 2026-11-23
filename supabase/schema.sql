@@ -114,3 +114,57 @@ create policy "gjester kan legge ved filer i kommentarer" on public.gjestebok_ko
   for insert to anon with check (godkjent);
 create policy "alle ser synlige filer i kommentarer" on public.gjestebok_kommentar_media
   for select to anon using (godkjent);
+
+-- Bildegalleriet. Radene peker til filer i mappen bilder/ i repoet.
+create table if not exists public.galleri (
+  id bigint generated always as identity primary key,
+  sti text not null,
+  rekkefolge int not null default 0
+);
+alter table public.galleri enable row level security;
+create policy "alle ser galleriet" on public.galleri for select to anon using (true);
+
+-- Admin: siden åpnes med ?admin=KODE. Bare en SHA-256-hash av koden lagres,
+-- i en tabell gjester ikke har tilgang til. Legg inn en kode slik:
+--   insert into private.admin_kode (hash) values (encode(extensions.digest('KODEN', 'sha256'), 'hex'));
+create schema if not exists private;
+create table if not exists private.admin_kode (hash text primary key);
+
+create or replace function public.er_admin(kode text)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select exists (
+    select 1 from private.admin_kode
+    where hash = encode(extensions.digest(kode, 'sha256'), 'hex')
+  );
+$$;
+
+create or replace function public.admin_slett(kode text, tabell text, rad_id bigint)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not public.er_admin(kode) then
+    raise exception 'ikke tilgang';
+  end if;
+  case tabell
+    when 'galleri' then delete from public.galleri where id = rad_id;
+    when 'gjestebok' then delete from public.gjestebok where id = rad_id;
+    when 'gjestebok_media' then delete from public.gjestebok_media where id = rad_id;
+    when 'gjestebok_kommentar' then delete from public.gjestebok_kommentar where id = rad_id;
+    when 'gjestebok_kommentar_media' then delete from public.gjestebok_kommentar_media where id = rad_id;
+    else raise exception 'ukjent tabell';
+  end case;
+end;
+$$;
+
+revoke all on function public.er_admin(text) from public;
+revoke all on function public.admin_slett(text, text, bigint) from public;
+grant execute on function public.er_admin(text) to anon, authenticated;
+grant execute on function public.admin_slett(text, text, bigint) to anon, authenticated;

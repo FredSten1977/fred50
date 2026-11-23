@@ -49,28 +49,6 @@
   oppdaterNedtelling();
   setInterval(oppdaterNedtelling, 1000);
 
-  // --- Bilder ---
-  const galleri = $("galleri");
-  const bilder = F.bilder.length ? F.bilder : Array.from({ length: 6 }, (_, i) => ({ tekst: "Bilde " + (i + 1) + " kommer" }));
-  bilder.map((b) => typeof b === "string" ? { fil: b } : b).forEach((b) => {
-    const fig = document.createElement("figure");
-    if (b.fil) {
-      const img = document.createElement("img");
-      img.src = b.fil; img.alt = b.tekst || ""; img.loading = "lazy";
-      fig.append(img);
-    } else {
-      const plass = document.createElement("div");
-      plass.className = "plass"; plass.textContent = "📷";
-      fig.append(plass);
-    }
-    if (b.tekst) {
-      const cap = document.createElement("figcaption");
-      cap.textContent = b.tekst;
-      fig.append(cap);
-    }
-    galleri.append(fig);
-  });
-
   // --- Video (YouTube / Vimeo) ---
   function embedUrl(url) {
     let m = url.match(/(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([\w-]{11})/);
@@ -142,7 +120,7 @@
 
   async function hentHilsener() {
     if (!db) return lokal.hent("fred50_gjestebok");
-    const { data, error } = await db.from("gjestebok").select("id, navn, tekst, created_at, gjestebok_media(sti, type), gjestebok_kommentar(id, navn, tekst, created_at, gjestebok_kommentar_media(sti, type))").order("created_at", { ascending: false }).limit(200);
+    const { data, error } = await db.from("gjestebok").select("id, navn, tekst, created_at, gjestebok_media(id, sti, type), gjestebok_kommentar(id, navn, tekst, created_at, gjestebok_kommentar_media(id, sti, type))").order("created_at", { ascending: false }).limit(200);
     if (error) throw error;
     return data;
   }
@@ -263,23 +241,27 @@
     }
   }
 
-  function lagMedia(media, navn) {
+  function lagMedia(media, navn, tabell) {
     const boks = document.createElement("div");
     boks.className = "hilsen-media";
     media.forEach((m) => {
+      const ramme = document.createElement("div");
+      ramme.className = "media-ramme";
       const url = db.storage.from("gjestebok").getPublicUrl(m.sti).data.publicUrl;
       if (m.type === "video") {
         const v = document.createElement("video");
         v.src = url; v.controls = true; v.playsInline = true; v.preload = "metadata";
-        boks.append(v);
+        ramme.append(v);
       } else {
         const a = document.createElement("a");
         a.href = url; a.target = "_blank"; a.rel = "noopener";
         const img = document.createElement("img");
         img.src = url; img.alt = "Bilde fra " + navn; img.loading = "lazy";
         a.append(img);
-        boks.append(a);
+        ramme.append(a);
       }
+      if (admin.kode) ramme.append(slettKnapp(tabell, m.id, "denne filen", visHilsener));
+      boks.append(ramme);
     });
     return boks;
   }
@@ -332,7 +314,8 @@
         b.textContent = k.navn + " ";
         li.append(b, document.createTextNode(k.tekst));
         const media = k.gjestebok_kommentar_media || [];
-        if (media.length) li.append(lagMedia(media, k.navn));
+        if (media.length) li.append(lagMedia(media, k.navn, "gjestebok_kommentar_media"));
+        if (admin.kode) li.append(slettKnapp("gjestebok_kommentar", k.id, "denne kommentaren", visHilsener));
         ul.append(li);
       });
       boks.append(ul);
@@ -399,8 +382,9 @@
         s.textContent = "– " + r.navn + ", " + new Date(r.created_at).toLocaleDateString("no-NO", { day: "numeric", month: "long", year: "numeric" });
         li.append(p);
         const media = r.gjestebok_media || [];
-        if (media.length) li.append(lagMedia(media, r.navn));
+        if (media.length) li.append(lagMedia(media, r.navn, "gjestebok_media"));
         li.append(s);
+        if (admin.kode && r.id) li.append(slettKnapp("gjestebok", r.id, "hele innlegget", visHilsener));
         if (db && r.id) li.append(lagKommentarer(r));
         return li;
       }));
@@ -408,5 +392,78 @@
       console.error(err);
     }
   }
-  visHilsener();
+  // --- Admin: Fredrik åpner siden med ?admin=KODE og får slette-knapper ---
+  const admin = { kode: null };
+
+  async function startAdmin() {
+    const params = new URLSearchParams(location.search);
+    let kode = params.get("admin");
+    if (kode) history.replaceState(null, "", location.pathname + location.hash);
+    else { try { kode = localStorage.getItem("fred50_admin"); } catch {} }
+    if (!kode || !db) return;
+    const { data, error } = await db.rpc("er_admin", { kode });
+    if (error || data !== true) { try { localStorage.removeItem("fred50_admin"); } catch {} return; }
+    admin.kode = kode;
+    try { localStorage.setItem("fred50_admin", kode); } catch {}
+    const banner = $("admin-banner");
+    banner.hidden = false;
+    banner.querySelector("button").addEventListener("click", () => {
+      try { localStorage.removeItem("fred50_admin"); } catch {}
+      location.reload();
+    });
+  }
+
+  function slettKnapp(tabell, id, hva, etter) {
+    const knapp = document.createElement("button");
+    knapp.type = "button"; knapp.className = "slett"; knapp.textContent = "🗑";
+    knapp.title = "Slett " + hva; knapp.setAttribute("aria-label", "Slett " + hva);
+    knapp.addEventListener("click", async (e) => {
+      e.preventDefault(); e.stopPropagation();
+      if (!confirm("Slette " + hva + "?")) return;
+      knapp.disabled = true;
+      const { error } = await db.rpc("admin_slett", { kode: admin.kode, tabell, rad_id: id });
+      if (error) { console.error(error); alert("Kunne ikke slette. Prøv igjen."); knapp.disabled = false; return; }
+      await etter();
+    });
+    return knapp;
+  }
+
+  // --- Bildegalleri: fra databasen når den finnes, ellers fra config.js ---
+  async function hentGalleri() {
+    if (db) {
+      const { data, error } = await db.from("galleri").select("id, sti").order("rekkefolge");
+      if (!error && data.length) return data.map((r) => ({ id: r.id, fil: r.sti }));
+    }
+    return F.bilder.map((b) => typeof b === "string" ? { fil: b } : b);
+  }
+
+  async function visGalleri() {
+    const galleri = $("galleri");
+    let bilder = await hentGalleri();
+    if (!bilder.length) bilder = Array.from({ length: 6 }, (_, i) => ({ tekst: "Bilde " + (i + 1) + " kommer" }));
+    galleri.replaceChildren(...bilder.map((b) => {
+      const fig = document.createElement("figure");
+      if (b.fil) {
+        const img = document.createElement("img");
+        img.src = b.fil; img.alt = b.tekst || ""; img.loading = "lazy";
+        fig.append(img);
+      } else {
+        const plass = document.createElement("div");
+        plass.className = "plass"; plass.textContent = "📷";
+        fig.append(plass);
+      }
+      if (b.tekst) {
+        const cap = document.createElement("figcaption");
+        cap.textContent = b.tekst;
+        fig.append(cap);
+      }
+      if (admin.kode && b.id) fig.append(slettKnapp("galleri", b.id, "bildet fra galleriet", visGalleri));
+      return fig;
+    }));
+  }
+
+  startAdmin().catch(console.error).finally(() => {
+    visGalleri();
+    visHilsener();
+  });
 })();
